@@ -8,7 +8,7 @@ import sys
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from bot.logic import reply  # noqa: E402
+from bot.logic import handle_message  # noqa: E402
 
 
 class handler(BaseHTTPRequestHandler):
@@ -34,7 +34,7 @@ class handler(BaseHTTPRequestHandler):
             text = message.get("text", "")
             chat_id = message.get("chat", {}).get("id")
             if text and chat_id is not None:
-                payload = json.dumps({"chat_id": chat_id, "text": reply(text)}, ensure_ascii=False).encode("utf-8")
+                payload = json.dumps({"chat_id": chat_id, "text": handle_message(chat_id, text)}, ensure_ascii=False).encode("utf-8")
                 request = Request(
                     f"https://api.telegram.org/bot{token}/sendMessage",
                     data=payload,
