@@ -21,6 +21,9 @@ class LogicTests(unittest.TestCase):
     def test_unknown_message(self):
         self.assertIn("/new", reply("Сколько стоит перевозка?"))
 
+    def test_dashboard_command(self):
+        self.assertIn("https://dashboard-tan-seven-92.vercel.app/", reply("/dashboard"))
+
 
 if __name__ == "__main__":
     unittest.main()
