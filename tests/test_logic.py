@@ -26,6 +26,9 @@ class LogicTests(unittest.TestCase):
     def test_start_mentions_help(self):
         self.assertIn("/help", reply("/start"))
 
+    def test_help_lists_confirmation(self):
+        self.assertIn("/confirm", reply("/help"))
+
     def test_dialog_collects_fields_without_resending_form(self):
         chat_id = 123456
         SESSIONS.pop(chat_id, None)
