@@ -114,25 +114,26 @@ def reply(text: str) -> str:
     return "Чтобы начать оформление, напишите /new. Список команд — /help."
 
 
-def handle_message(chat_id: int, text: str) -> str:
-    """Обрабатывает пошаговый диалог; состояние хранится только в памяти экземпляра."""
+def handle_message(chat_id: int, text: str, sessions=None) -> str:
+    """Обрабатывает пошаговый диалог через переданное хранилище сессий."""
+    sessions = SESSIONS if sessions is None else sessions
     command = _command(text)
     now = time.time()
-    for key, session in list(SESSIONS.items()):
-        if now - session["updated_at"] > SESSION_TTL_SECONDS:
-            SESSIONS.pop(key, None)
-    session = SESSIONS.get(chat_id)
+    session = sessions.get(chat_id)
+    if session and now - session["updated_at"] > SESSION_TTL_SECONDS:
+        sessions.pop(chat_id, None)
+        session = None
 
     if command == "/new":
-        SESSIONS[chat_id] = {"values": {}, "awaiting": FIELDS[0][1], "updated_at": now}
+        sessions[chat_id] = {"values": {}, "awaiting": FIELDS[0][1], "updated_at": now}
         return FIELDS[0][2]
     if command == "/cancel":
-        SESSIONS.pop(chat_id, None)
+        sessions.pop(chat_id, None)
         return "Текущая заявка отменена. Чтобы начать заново, напишите /new."
     if command == "/confirm":
         if not session or session.get("stage") != "confirm":
             return "Сейчас нет черновика на подтверждение. Чтобы начать, напишите /new."
-        SESSIONS.pop(chat_id, None)
+        sessions.pop(chat_id, None)
         return "Черновик подтверждён и подготовлен для проверки менеджером. Данные не отправлены в рабочую систему."
     if command.startswith("/"):
         return reply(text)
@@ -148,7 +149,7 @@ def handle_message(chat_id: int, text: str) -> str:
             }
             missing = next((item for item in FIELDS if item[1] not in accepted), None)
             if missing:
-                SESSIONS[chat_id] = {
+                sessions[chat_id] = {
                     "values": accepted,
                     "awaiting": missing[1],
                     "updated_at": now,

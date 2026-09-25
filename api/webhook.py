@@ -8,18 +8,29 @@ import sys
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from bot.logic import handle_message  # noqa: E402
+from bot.logic import SESSIONS, handle_message  # noqa: E402
+from bot.session_store import SessionStoreUnavailable, session_store_from_env  # noqa: E402
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self._respond(200, {"status": "ok", "service": "AmurTrans Assistant"})
+        persistent = bool(os.getenv("KV_REST_API_URL") and os.getenv("KV_REST_API_TOKEN"))
+        self._respond(200, {
+            "status": "ok",
+            "service": "AmurTrans Assistant",
+            "session_storage": "upstash-redis" if persistent else "process-memory",
+        })
 
     def do_POST(self):
         secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
         token = os.getenv("TELEGRAM_BOT_TOKEN", "")
         if not secret or not token:
             self._respond(503, {"error": "not configured"})
+            return
+        try:
+            sessions = session_store_from_env(SESSIONS)
+        except SessionStoreUnavailable:
+            self._respond(503, {"error": "session storage unavailable"})
             return
         if self.headers.get("X-Telegram-Bot-Api-Secret-Token") != secret:
             self._respond(403, {"error": "forbidden"})
@@ -34,7 +45,8 @@ class handler(BaseHTTPRequestHandler):
             text = message.get("text", "")
             chat_id = message.get("chat", {}).get("id")
             if text and chat_id is not None:
-                payload = json.dumps({"chat_id": chat_id, "text": handle_message(chat_id, text)}, ensure_ascii=False).encode("utf-8")
+                answer = handle_message(chat_id, text, sessions=sessions)
+                payload = json.dumps({"chat_id": chat_id, "text": answer}, ensure_ascii=False).encode("utf-8")
                 request = Request(
                     f"https://api.telegram.org/bot{token}/sendMessage",
                     data=payload,
@@ -44,6 +56,8 @@ class handler(BaseHTTPRequestHandler):
                     if response.status != 200:
                         raise RuntimeError("Telegram sendMessage failed")
             self._respond(200, {"ok": True})
+        except SessionStoreUnavailable:
+            self._respond(503, {"error": "session storage unavailable"})
         except (ValueError, TypeError):
             self._respond(400, {"error": "invalid update"})
         except Exception:
