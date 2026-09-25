@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 WIKI = "https://petkras.github.io/amurtrans-kontrol/"
+DASHBOARD = "https://dashboard-tan-seven-92.vercel.app/"
 FIELDS = (
     ("Отправитель", "sender"),
     ("Откуда", "origin"),
@@ -67,9 +68,13 @@ def reply(text: str) -> str:
                 "Начните с /new. Документация проекта: " + WIKI)
     if command == "/help":
         return ("/new — шаблон заявки\n/example — пример заполнения\n/wiki — Wiki продукта\n"
+                "/dashboard — демонстрационная аналитика\n"
                 "/help — эта подсказка\n\nЗаполните шаблон одним сообщением. Для пустого поля оставьте строку после двоеточия пустой.")
     if command == "/wiki":
         return "Wiki «АмурТранс Контроль»: " + WIKI
+    if command == "/dashboard":
+        return ("Интерактивный дашборд обработки заказов: " + DASHBOARD
+                + "\nПоказатели построены на демонстрационных данных. Можно загрузить свой CSV по указанной на странице схеме.")
     if command == "/new":
         return "Заполните поля и отправьте всё одним сообщением:\n\n" + TEMPLATE
     if command == "/example":
