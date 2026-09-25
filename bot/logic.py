@@ -163,6 +163,7 @@ def handle_message(chat_id: int, text: str, sessions=None) -> str:
     problem = validate_value(key, value)
     if problem:
         session["updated_at"] = now
+        sessions[chat_id] = session
         return problem + "\n\n" + field[2]
 
     session["values"][key] = value
@@ -170,9 +171,11 @@ def handle_message(chat_id: int, text: str, sessions=None) -> str:
     next_field = next((item for item in FIELDS if item[1] not in session["values"]), None)
     if next_field:
         session["awaiting"] = next_field[1]
+        sessions[chat_id] = session
         return next_field[2]
 
     session["stage"] = "confirm"
+    sessions[chat_id] = session
     return ("Готово, все обязательные данные собраны. Проверьте черновик:\n\n"
             + _summary(session["values"])
             + "\n\nЕсли всё верно, напишите /confirm. Чтобы начать заново — /new.")

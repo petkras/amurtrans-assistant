@@ -1,4 +1,5 @@
 import unittest
+from copy import deepcopy
 
 from bot.logic import SESSIONS, handle_message, parse_form, reply, validate_form
 
@@ -68,6 +69,26 @@ class LogicTests(unittest.TestCase):
         result = handle_message(chat_id, "+7 900 000-00-00")
         self.assertIn("все обязательные данные собраны", result)
         self.assertIn("Отправитель: ООО Тест", result)
+
+    def test_dialog_writes_back_copied_sessions_after_each_answer(self):
+        class CopyingStore(dict):
+            def get(self, key, default=None):
+                value = super().get(key, default)
+                return deepcopy(value) if value is not default else default
+
+        chat_id = 246810
+        store = CopyingStore()
+        handle_message(chat_id, "/new", sessions=store)
+        handle_message(chat_id, "ООО Redis Тест", sessions=store)
+        self.assertEqual(store[chat_id]["awaiting"], "origin")
+        self.assertEqual(store[chat_id]["values"]["sender"], "ООО Redis Тест")
+
+        invalid = handle_message(chat_id, "", sessions=store)
+        self.assertIn("обязательное поле", invalid)
+        self.assertEqual(store[chat_id]["awaiting"], "origin")
+        handle_message(chat_id, "Комсомольск-на-Амуре, тестовый адрес", sessions=store)
+        self.assertEqual(store[chat_id]["awaiting"], "destination")
+        self.assertEqual(store[chat_id]["values"]["origin"], "Комсомольск-на-Амуре, тестовый адрес")
 
 
 if __name__ == "__main__":
