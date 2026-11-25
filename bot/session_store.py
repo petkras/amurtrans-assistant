@@ -25,8 +25,12 @@ class UpstashSessionStore:
 
     @classmethod
     def from_env(cls) -> UpstashSessionStore | None:
-        url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
-        token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
+        if os.getenv("AMUR_KV_REST_API_URL") or os.getenv("AMUR_KV_REST_API_TOKEN"):
+            url = os.getenv("AMUR_KV_REST_API_URL")
+            token = os.getenv("AMUR_KV_REST_API_TOKEN")
+        else:
+            url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
+            token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
         if not url and not token:
             return None
         if not url or not token or not url.startswith("https://"):

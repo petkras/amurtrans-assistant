@@ -14,7 +14,11 @@ from bot.session_store import SessionStoreUnavailable, session_store_from_env  #
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        persistent = bool(os.getenv("KV_REST_API_URL") and os.getenv("KV_REST_API_TOKEN"))
+        try:
+            persistent = session_store_from_env(SESSIONS) is not SESSIONS
+        except SessionStoreUnavailable:
+            self._respond(503, {"status": "unavailable", "error": "session storage configuration"})
+            return
         self._respond(200, {
             "status": "ok",
             "service": "AmurTrans Assistant",
