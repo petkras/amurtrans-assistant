@@ -56,6 +56,9 @@ class UpstashSessionStore:
             raise SessionStoreUnavailable("Redis REST returned an error")
         return payload.get("result")
 
+    def command(self, *parts: str | int) -> object:
+        return self._request("POST", "", json.dumps(parts, ensure_ascii=False).encode("utf-8"))
+
     @staticmethod
     def _key(chat_id: int) -> str:
         return "amurtrans:session:" + quote(str(chat_id), safe="")

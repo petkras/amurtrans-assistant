@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bot.logic import SESSIONS, handle_message  # noqa: E402
 from bot.session_store import SessionStoreUnavailable, session_store_from_env  # noqa: E402
+from bot.wiki_assistant import relay_answer  # noqa: E402
 
 
 class handler(BaseHTTPRequestHandler):
@@ -49,7 +50,7 @@ class handler(BaseHTTPRequestHandler):
             text = message.get("text", "")
             chat_id = message.get("chat", {}).get("id")
             if text and chat_id is not None:
-                answer = handle_message(chat_id, text, sessions=sessions)
+                answer = handle_message(chat_id, text, sessions=sessions, wiki_answer=relay_answer)
                 payload = json.dumps({"chat_id": chat_id, "text": answer}, ensure_ascii=False).encode("utf-8")
                 request = Request(
                     f"https://api.telegram.org/bot{token}/sendMessage",

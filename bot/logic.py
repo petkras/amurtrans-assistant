@@ -114,7 +114,7 @@ def reply(text: str) -> str:
     return "Чтобы начать оформление, напишите /new. Список команд — /help."
 
 
-def handle_message(chat_id: int, text: str, sessions=None) -> str:
+def handle_message(chat_id: int, text: str, sessions=None, wiki_answer=None) -> str:
     """Обрабатывает пошаговый диалог через переданное хранилище сессий."""
     sessions = SESSIONS if sessions is None else sessions
     command = _command(text)
@@ -156,7 +156,8 @@ def handle_message(chat_id: int, text: str, sessions=None) -> str:
                 }
                 return f"Получил заявку: заполнено {len(accepted)} из {len(FIELDS)} полей. Уточню только недостающее.\n\n{missing[2]}"
             return reply(text)
-        return reply(text)
+        answer = wiki_answer(text, sessions) if wiki_answer else None
+        return answer or reply(text)
     key = session["awaiting"]
     field = next(item for item in FIELDS if item[1] == key)
     value = text.strip()[:300]
